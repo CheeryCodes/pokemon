@@ -4,10 +4,11 @@ import SearchBar from '../components/SearchBar';
 import './Home.css';
 
 const PokemonCard = lazy(() => import('../components/PokemonCard')); // Lazy load PokemonCard
+const Loading = lazy(() => import('../components/Loading')); // Lazy load Loading
 
 function Home() {
   const [pokemons, setPokemons] = useState([]);
-  const [loading, setLoading] = useState(true); // For data loading
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [allPokemons, setAllPokemons] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,62 +31,80 @@ function Home() {
     }
   }, []);
 
+  // Helper function to add a delay
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   // Fetch paginated Pokémon data based on the current search term and page
   const fetchPokemons = useCallback(async () => {
-    if (!hasMore || loading) return; // Prevent fetching if there's no more data or currently loading
-    setLoading(true);
+    setLoading(true); // Start loading spinner
+
     try {
       let results = [];
+
       if (searchTerm) {
+        // Fetch only filtered Pokémon based on the search term
         const filteredResults = allPokemons.filter(pokemon =>
           pokemon.name.toLowerCase().startsWith(searchTerm)
         );
+        
         if (filteredResults.length === 0) {
-          setHasMore(false);
+          setHasMore(false); // No results for this search
+          setPokemons([]); // Clear the Pokémon list
           setLoading(false);
           return;
         }
-        const promises = filteredResults.slice((currentPage - 1) * 20, currentPage * 20).map(async (pokemon) => {
+
+        // Fetch only the filtered Pokémon details with delay
+        for (let i = (currentPage - 1) * 20; i < currentPage * 20 && i < filteredResults.length; i++) {
+          const pokemon = filteredResults[i];
           const details = await axios.get(pokemon.url);
-          return details.data;
-        });
-        results = await Promise.all(promises);
+          results.push(details.data);
+          await delay(500); // Add a 500ms delay between each fetch
+        }
+
       } else {
+        // Fetch paginated Pokémon when no search term is present
         const response = await axios.get(`https://pokeapi.co/api/v2/pokemon?offset=${(currentPage - 1) * 20}&limit=20`);
-        const promises = response.data.results.map(async (pokemon) => {
+        const pokemonBatch = response.data.results;
+
+        for (let i = 0; i < pokemonBatch.length; i++) {
+          const pokemon = pokemonBatch[i];
           const details = await axios.get(pokemon.url);
-          return details.data;
-        });
-        results = await Promise.all(promises);
+          results.push(details.data);
+          await delay(500); // Add a 500ms delay between each fetch
+        }
+
         setHasMore(response.data.next !== null); // Check if more pages exist
       }
-      setPokemons(prevPokemons => [...prevPokemons, ...results]); // Append new results to the list
-      setLoading(false);
+
+      // Append new results to the list or set search results
+      setPokemons(prevPokemons => currentPage === 1 ? results : [...prevPokemons, ...results]); // Reset on page 1 (for search)
+      setLoading(false); // Stop loading spinner
     } catch (error) {
       console.error(error);
       setLoading(false);
     }
-  }, [allPokemons, searchTerm, currentPage, hasMore, loading]);
+  }, [allPokemons, searchTerm, currentPage]);
 
-  // Load more Pokémon when scrolling reaches the bottom
+  // Load more Pokémon when scrolling reaches the bottom (only if no search term)
   useEffect(() => {
     const handleScroll = () => {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && !loading) {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 && !loading && !searchTerm) {
         setCurrentPage(prevPage => prevPage + 1);
       }
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading]);
+  }, [loading, searchTerm]);
 
   useEffect(() => {
     fetchAllPokemons(); // Fetch all Pokémon on component mount
   }, [fetchAllPokemons]);
 
   useEffect(() => {
-    fetchPokemons(); // Fetch Pokémon for the current page
-  }, [fetchPokemons, currentPage]);
+    fetchPokemons(); // Fetch Pokémon for the current page or search
+  }, [fetchPokemons, currentPage, searchTerm]);
 
   const handleSearch = (term) => {
     setSearchTerm(term.toLowerCase()); // Update search term
@@ -98,19 +117,19 @@ function Home() {
     <div>
       <h1 className="page-heading">Pokémon List</h1>
       <SearchBar onSearch={handleSearch} />
-      {/* Only wrap lazy-loaded components in Suspense */}
-      <div className="pokemon-grid">
-        {pokemons.length > 0 ? (
-          <Suspense fallback={<div>Loading Pokémon Cards...</div>}>
-            {pokemons.map(pokemon => (
+      <Suspense fallback={<div>Loading...</div>}>
+        {loading && <Loading />}
+        <div className="pokemon-grid">
+          {pokemons.length > 0 ? (
+            pokemons.map(pokemon => (
               <PokemonCard key={pokemon.name} pokemon={pokemon} />
-            ))}
-          </Suspense>
-        ) : (
-          !loading && <p>No Pokémon found. Please check the name and try again.</p>
-        )}
-      </div>
-      {loading && <p>Loading more Pokémon...</p>} {/* Handle data loading here */}
+            ))
+          ) : (
+            !loading && <p>No Pokémon found. Please check the name and try again.</p>
+          )}
+        </div>
+        {loading && <Loading />}
+      </Suspense>
     </div>
   );
 }
