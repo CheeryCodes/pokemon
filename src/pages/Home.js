@@ -54,12 +54,12 @@ function Home() {
           return;
         }
 
-        // Fetch only the filtered Pokémon details with delay
+        // Fetch only the filtered Pokémon details with reduced delay
         for (let i = (currentPage - 1) * 20; i < currentPage * 20 && i < filteredResults.length; i++) {
           const pokemon = filteredResults[i];
           const details = await axios.get(pokemon.url);
           results.push(details.data);
-          await delay(500); // Add a 500ms delay between each fetch
+          await delay(200); // Reduced delay to 200ms
         }
 
       } else {
@@ -71,7 +71,7 @@ function Home() {
           const pokemon = pokemonBatch[i];
           const details = await axios.get(pokemon.url);
           results.push(details.data);
-          await delay(500); // Add a 500ms delay between each fetch
+          await delay(200); // Reduced delay to 200ms
         }
 
         setHasMore(response.data.next !== null); // Check if more pages exist
@@ -86,17 +86,17 @@ function Home() {
     }
   }, [allPokemons, searchTerm, currentPage]);
 
-  // Load more Pokémon when scrolling reaches the bottom (only if no search term)
+  // Load more Pokémon when scrolling reaches the bottom (for both search and regular lists)
   useEffect(() => {
     const handleScroll = () => {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 && !loading && !searchTerm) {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 && !loading && hasMore) {
         setCurrentPage(prevPage => prevPage + 1);
       }
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, searchTerm]);
+  }, [loading, hasMore]);
 
   useEffect(() => {
     fetchAllPokemons(); // Fetch all Pokémon on component mount
@@ -118,15 +118,11 @@ function Home() {
       <h1 className="page-heading">Pokémon List</h1>
       <SearchBar onSearch={handleSearch} />
       <Suspense fallback={<div>Loading...</div>}>
-        {loading && <Loading />}
+        {!loading && pokemons.length === 0 && <p>No Pokémon found. Please check the name and try again.</p>}
         <div className="pokemon-grid">
-          {pokemons.length > 0 ? (
-            pokemons.map(pokemon => (
-              <PokemonCard key={pokemon.name} pokemon={pokemon} />
-            ))
-          ) : (
-            !loading && <p>No Pokémon found. Please check the name and try again.</p>
-          )}
+          {pokemons.map(pokemon => (
+            <PokemonCard key={pokemon.name} pokemon={pokemon} />
+          ))}
         </div>
         {loading && <Loading />}
       </Suspense>
