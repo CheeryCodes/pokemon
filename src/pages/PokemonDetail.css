@@ -1,0 +1,96 @@
+.pokemon-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  color: #333;
+}
+
+.pokemon-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  background-color: #ffffff; /* White background for the header */
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+
+
+.pokemon-detail-image {
+  width: 400px;
+  height: auto;
+  border: 6px solid;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.pokemon-type-list {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10 10px 80px 80px;
+  position: absolute;
+  right: 20px;
+  top: 20px;
+}
+
+.pokemon-type {
+  border-radius: 10px;
+  padding: 5px 10px;
+  margin: 0 5px;
+  font-size: 14px;
+  font-weight: bold;
+  color: white;
+}
+
+.tab-headings {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  background-color: #ffffff;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 40px;
+}
+
+.tab-heading {
+  padding: 10px;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+}
+
+.tab-heading.active {
+  background-color: black;
+  color:white;
+  border-radius:20px;
+}
+
+.tab-container {
+  width: 100%;
+  background-color: #ffffff; /* White background for the content */
+  border-radius: 10px;
+  padding: 20px;
+}
+
+
+.back-button {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  padding: 10px 20px;
+  background-color: white;
+  border: none;
+ border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background-color: rgba(255, 255, 245, 0.1);
+  border: 2px solid;
+}
