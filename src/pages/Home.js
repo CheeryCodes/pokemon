@@ -40,13 +40,14 @@ function Home() {
 
     try {
       let results = [];
+      const perPage = 20;
 
       if (searchTerm) {
-        // Fetch only filtered Pokémon based on the search term
+        // Fetch filtered Pokémon based on the search term
         const filteredResults = allPokemons.filter(pokemon =>
           pokemon.name.toLowerCase().startsWith(searchTerm)
         );
-        
+
         if (filteredResults.length === 0) {
           setHasMore(false); // No results for this search
           setPokemons([]); // Clear the Pokémon list
@@ -55,23 +56,28 @@ function Home() {
         }
 
         // Fetch only the filtered Pokémon details with reduced delay
-        for (let i = (currentPage - 1) * 20; i < currentPage * 20 && i < filteredResults.length; i++) {
+        const startIdx = (currentPage - 1) * perPage;
+        const endIdx = currentPage * perPage;
+
+        for (let i = startIdx; i < endIdx && i < filteredResults.length; i++) {
           const pokemon = filteredResults[i];
           const details = await axios.get(pokemon.url);
           results.push(details.data);
           await delay(200); // Reduced delay to 200ms
         }
 
+        setHasMore(endIdx < filteredResults.length); // Check if more results to load
+
       } else {
         // Fetch paginated Pokémon when no search term is present
-        const response = await axios.get(`https://pokeapi.co/api/v2/pokemon?offset=${(currentPage - 1) * 20}&limit=20`);
+        const response = await axios.get(`https://pokeapi.co/api/v2/pokemon?offset=${(currentPage - 1) * perPage}&limit=${perPage}`);
         const pokemonBatch = response.data.results;
 
         for (let i = 0; i < pokemonBatch.length; i++) {
           const pokemon = pokemonBatch[i];
           const details = await axios.get(pokemon.url);
           results.push(details.data);
-          await delay(200); // Reduced delay to 200ms
+          await delay(100); // Reduced delay to 100ms
         }
 
         setHasMore(response.data.next !== null); // Check if more pages exist
